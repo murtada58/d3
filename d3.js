@@ -1698,9 +1698,8 @@
     return v < 16 ? "0" + Math.max(0, v).toString(16) : Math.min(255, v).toString(16);
   }
   function d3_rgb_parse(format, rgb, hsl) {
-    format = format.toLowerCase();
     var r = 0, g = 0, b = 0, m1, m2, color;
-    m1 = /([a-z]+)\((.*)\)/.exec(format);
+    m1 = /([a-z]+)\((.*)\)/.exec(format = format.toLowerCase());
     if (m1) {
       m2 = m1[2].split(",");
       switch (m1[1]) {
@@ -7982,26 +7981,31 @@
       } else {
         x2 = y2 = 0;
       }
-      if ((rc = Math.min(Math.abs(r1 - r0) / 2, +cornerRadius.apply(this, arguments))) > .001) {
+      var cornerRadii = cornerRadius.apply(this, arguments);
+      if (typeof cornerRadii === "number") {
+        cornerRadii = [ cornerRadii, cornerRadii, cornerRadii, cornerRadii ];
+      } else if (cornerRadii.length === 1) {
+        cornerRadii = [ cornerRadii[0], cornerRadii[0], cornerRadii[0], cornerRadii[0] ];
+      } else if (cornerRadii.length === 2) {
+        cornerRadii = [ cornerRadii[0], cornerRadii[1], cornerRadii[1], cornerRadii[0] ];
+      } else if (cornerRadii.length === 3) {
+        cornerRadii = [ cornerRadii[0], cornerRadii[1], cornerRadii[1], cornerRadii[2] ];
+      }
+      for (var i = 0; i < 4; i++) {
+        cornerRadii[i] = Math.min(Math.abs(r1 - r0) / 2, cornerRadii[i]);
+      }
+      if (Math.max(cornerRadii[0], cornerRadii[1], cornerRadii[2], cornerRadii[3]) > .001) {
         cr = r0 < r1 ^ cw ? 0 : 1;
         var oc = x3 == null ? [ x2, y2 ] : x1 == null ? [ x0, y0 ] : d3_geom_polygonIntersect([ x0, y0 ], [ x3, y3 ], [ x1, y1 ], [ x2, y2 ]), ax = x0 - oc[0], ay = y0 - oc[1], bx = x1 - oc[0], by = y1 - oc[1], kc = 1 / Math.sin(Math.acos((ax * bx + ay * by) / (Math.sqrt(ax * ax + ay * ay) * Math.sqrt(bx * bx + by * by))) / 2), lc = Math.sqrt(oc[0] * oc[0] + oc[1] * oc[1]);
         if (x1 != null) {
-          var rc1 = Math.min(rc, (r1 - lc) / (kc + 1)), t30 = d3_svg_arcCornerTangents(x3 == null ? [ x2, y2 ] : [ x3, y3 ], [ x0, y0 ], r1, rc1, cw), t12 = d3_svg_arcCornerTangents([ x1, y1 ], [ x2, y2 ], r1, rc1, cw);
-          if (rc === rc1) {
-            path.push("M", t30[0], "A", rc1, ",", rc1, " 0 0,", cr, " ", t30[1], "A", r1, ",", r1, " 0 ", 1 - cw ^ d3_svg_arcSweep(t30[1][0], t30[1][1], t12[1][0], t12[1][1]), ",", cw, " ", t12[1], "A", rc1, ",", rc1, " 0 0,", cr, " ", t12[0]);
-          } else {
-            path.push("M", t30[0], "A", rc1, ",", rc1, " 0 1,", cr, " ", t12[0]);
-          }
+          var crtl = Math.min(cornerRadii[0], (r1 - lc) / (kc + 1)), crtr = Math.min(cornerRadii[1], (r1 - lc) / (kc + 1)), t30 = d3_svg_arcCornerTangents(x3 == null ? [ x2, y2 ] : [ x3, y3 ], [ x0, y0 ], r1, crtl, cw), t12 = d3_svg_arcCornerTangents([ x1, y1 ], [ x2, y2 ], r1, crtr, cw);
+          path.push("M", t30[0], "A", crtl, ",", crtl, " 0 0,", cr, " ", t30[1], "A", r1, ",", r1, " 0 ", 1 - cw ^ d3_svg_arcSweep(t30[1][0], t30[1][1], t12[1][0], t12[1][1]), ",", cw, " ", t12[1], "A", crtr, ",", crtr, " 0 0,", cr, " ", t12[0]);
         } else {
           path.push("M", x0, ",", y0);
         }
         if (x3 != null) {
-          var rc0 = Math.min(rc, (r0 - lc) / (kc - 1)), t03 = d3_svg_arcCornerTangents([ x0, y0 ], [ x3, y3 ], r0, -rc0, cw), t21 = d3_svg_arcCornerTangents([ x2, y2 ], x1 == null ? [ x0, y0 ] : [ x1, y1 ], r0, -rc0, cw);
-          if (rc === rc0) {
-            path.push("L", t21[0], "A", rc0, ",", rc0, " 0 0,", cr, " ", t21[1], "A", r0, ",", r0, " 0 ", cw ^ d3_svg_arcSweep(t21[1][0], t21[1][1], t03[1][0], t03[1][1]), ",", 1 - cw, " ", t03[1], "A", rc0, ",", rc0, " 0 0,", cr, " ", t03[0]);
-          } else {
-            path.push("L", t21[0], "A", rc0, ",", rc0, " 0 0,", cr, " ", t03[0]);
-          }
+          var crbl = Math.min(cornerRadii[2], (r0 - lc) / (kc - 1)), crbr = Math.min(cornerRadii[3], (r0 - lc) / (kc - 1)), t03 = d3_svg_arcCornerTangents([ x0, y0 ], [ x3, y3 ], r0, -crbl, cw), t21 = d3_svg_arcCornerTangents([ x2, y2 ], x1 == null ? [ x0, y0 ] : [ x1, y1 ], r0, -crbr, cw);
+          path.push("L", t21[0], "A", crbr, ",", crbr, " 0 0,", cr, " ", t21[1], "A", r0, ",", r0, " 0 ", cw ^ d3_svg_arcSweep(t21[1][0], t21[1][1], t03[1][0], t03[1][1]), ",", 1 - cw, " ", t03[1], "A", crbl, ",", crbl, " 0 0,", cr, " ", t03[0]);
         } else {
           path.push("L", x2, ",", y2);
         }

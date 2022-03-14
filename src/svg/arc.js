@@ -95,7 +95,14 @@ d3.svg.arc = function() {
     }
 
     // Compute the rounded corners.
-    if ((rc = Math.min(Math.abs(r1 - r0) / 2, +cornerRadius.apply(this, arguments))) > 1e-3) {
+    var cornerRadii = cornerRadius.apply(this, arguments);
+    if (typeof(cornerRadii) === 'number') { cornerRadii = [cornerRadii, cornerRadii, cornerRadii, cornerRadii]; }
+    else if (cornerRadii.length === 1) { cornerRadii = [cornerRadii[0], cornerRadii[0], cornerRadii[0], cornerRadii[0]]; }
+    else if (cornerRadii.length === 2) { cornerRadii = [cornerRadii[0], cornerRadii[1], cornerRadii[1], cornerRadii[0]]; }
+    else if (cornerRadii.length === 3) { cornerRadii = [cornerRadii[0], cornerRadii[1], cornerRadii[1], cornerRadii[2]]; }
+    for (var i = 0; i < 4; i++) { cornerRadii[i] = Math.min(Math.abs(r1 - r0) / 2, cornerRadii[i]); }
+    
+    if (Math.max(cornerRadii[0], cornerRadii[1], cornerRadii[2], cornerRadii[3]) > 1e-3) {
       cr = r0 < r1 ^ cw ? 0 : 1;
 
       // Compute the angle of the sector formed by the two sides of the arc.
@@ -109,44 +116,33 @@ d3.svg.arc = function() {
 
       // Compute the outer corners.
       if (x1 != null) {
-        var rc1 = Math.min(rc, (r1 - lc) / (kc + 1)),
-            t30 = d3_svg_arcCornerTangents(x3 == null ? [x2, y2] : [x3, y3], [x0, y0], r1, rc1, cw),
-            t12 = d3_svg_arcCornerTangents([x1, y1], [x2, y2], r1, rc1, cw);
+        var crtl = Math.min(cornerRadii[0], (r1 - lc) / (kc + 1)),
+            crtr = Math.min(cornerRadii[1], (r1 - lc) / (kc + 1)),
+            t30 = d3_svg_arcCornerTangents(x3 == null ? [x2, y2] : [x3, y3], [x0, y0], r1, crtl, cw), // rc1 here controlls top left corner
+            t12 = d3_svg_arcCornerTangents([x1, y1], [x2, y2], r1, crtr, cw); // rc1 here controlls top right corner
 
-        // Detect whether the outer edge is fully circular.
-        if (rc === rc1) {
-          path.push(
-            "M", t30[0],
-            "A", rc1, ",", rc1, " 0 0,", cr, " ", t30[1],
-            "A", r1, ",", r1, " 0 ", (1 - cw) ^ d3_svg_arcSweep(t30[1][0], t30[1][1], t12[1][0], t12[1][1]), ",", cw, " ", t12[1],
-            "A", rc1, ",", rc1, " 0 0,", cr, " ", t12[0]);
-        } else {
-          path.push(
-            "M", t30[0],
-            "A", rc1, ",", rc1, " 0 1,", cr, " ", t12[0]);
-        }
+        path.push(
+          "M", t30[0],
+          "A", crtl, ",", crtl, " 0 0,", cr, " ", t30[1],
+          "A", r1, ",", r1, " 0 ", (1 - cw) ^ d3_svg_arcSweep(t30[1][0], t30[1][1], t12[1][0], t12[1][1]), ",", cw, " ", t12[1],
+          "A", crtr, ",", crtr, " 0 0,", cr, " ", t12[0]);
+
       } else {
         path.push("M", x0, ",", y0);
       }
 
       // Compute the inner corners.
       if (x3 != null) {
-        var rc0 = Math.min(rc, (r0 - lc) / (kc - 1)),
-            t03 = d3_svg_arcCornerTangents([x0, y0], [x3, y3], r0, -rc0, cw),
-            t21 = d3_svg_arcCornerTangents([x2, y2], x1 == null ? [x0, y0] : [x1, y1], r0, -rc0, cw);
+        var crbl = Math.min(cornerRadii[2], (r0 - lc) / (kc - 1)),
+            crbr = Math.min(cornerRadii[3], (r0 - lc) / (kc - 1)),
+            t03 = d3_svg_arcCornerTangents([x0, y0], [x3, y3], r0, -crbl, cw), // rc0 here controlls bottom left corner
+            t21 = d3_svg_arcCornerTangents([x2, y2], x1 == null ? [x0, y0] : [x1, y1], r0, -crbr, cw); // rc0 here controlls bottom right corner
 
-        // Detect whether the inner edge is fully circular.
-        if (rc === rc0) {
-          path.push(
-            "L", t21[0],
-            "A", rc0, ",", rc0, " 0 0,", cr, " ", t21[1],
-            "A", r0, ",", r0, " 0 ", cw ^ d3_svg_arcSweep(t21[1][0], t21[1][1], t03[1][0], t03[1][1]), ",", 1 - cw, " ", t03[1],
-            "A", rc0, ",", rc0, " 0 0,", cr, " ", t03[0]);
-        } else {
-          path.push(
-            "L", t21[0],
-            "A", rc0, ",", rc0, " 0 0,", cr, " ", t03[0]);
-        }
+        path.push(
+          "L", t21[0],
+          "A", crbr, ",", crbr, " 0 0,", cr, " ", t21[1],
+          "A", r0, ",", r0, " 0 ", cw ^ d3_svg_arcSweep(t21[1][0], t21[1][1], t03[1][0], t03[1][1]), ",", 1 - cw, " ", t03[1],
+          "A", crbl, ",", crbl, " 0 0,", cr, " ", t03[0]);
       } else {
         path.push("L", x2, ",", y2);
       }
