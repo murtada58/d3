@@ -7981,31 +7981,46 @@
       } else {
         x2 = y2 = 0;
       }
-      var cornerRadii = cornerRadius.apply(this, arguments);
-      if (typeof cornerRadii === "number") {
-        cornerRadii = [ cornerRadii, cornerRadii, cornerRadii, cornerRadii ];
-      } else if (cornerRadii.length === 1) {
-        cornerRadii = [ cornerRadii[0], cornerRadii[0], cornerRadii[0], cornerRadii[0] ];
-      } else if (cornerRadii.length === 2) {
-        cornerRadii = [ cornerRadii[0], cornerRadii[1], cornerRadii[1], cornerRadii[0] ];
-      } else if (cornerRadii.length === 3) {
-        cornerRadii = [ cornerRadii[0], cornerRadii[1], cornerRadii[1], cornerRadii[2] ];
+      var rc00, rc01, rc10, rc11, mwrc = Math.abs(r1 - r0) / 2, rci = cornerRadius.apply(this, arguments);
+      if (Array.isArray(rci)) {
+        for (var i = 0; i < rci.length; i++) rci[i] = Math.min(mwrc, +rci[i]);
+        if (rci.length === 1) rc = [ rci[0], rci[0], rci[0], rci[0] ]; else if (rci.length === 2) rc = [ rci[0], rci[1], rci[0], rci[1] ]; else if (rci.length === 3) rc = [ rci[0], rci[1], rci[2], rci[1] ]; else if (rci.length === 4) rc = rci;
+        rc00 = rc[2];
+        rc01 = rc[3];
+        rc10 = rc[0];
+        rc11 = rc[1];
+      } else {
+        rci = Math.min(mwrc, +rci);
+        rc = [ rci, rci, rci, rci ];
+        rc00 = rc[2];
+        rc01 = rc[3];
+        rc10 = rc[0];
+        rc11 = rc[1];
       }
-      for (var i = 0; i < 4; i++) {
-        cornerRadii[i] = Math.min(Math.abs(r1 - r0) / 2, cornerRadii[i]);
-      }
-      if (Math.max(cornerRadii[0], cornerRadii[1], cornerRadii[2], cornerRadii[3]) > .001) {
+      if (Math.max(rc[0], rc[1], rc[2], rc[3]) > .001) {
         cr = r0 < r1 ^ cw ? 0 : 1;
-        var oc = x3 == null ? [ x2, y2 ] : x1 == null ? [ x0, y0 ] : d3_geom_polygonIntersect([ x0, y0 ], [ x3, y3 ], [ x1, y1 ], [ x2, y2 ]), ax = x0 - oc[0], ay = y0 - oc[1], bx = x1 - oc[0], by = y1 - oc[1], kc = 1 / Math.sin(Math.acos((ax * bx + ay * by) / (Math.sqrt(ax * ax + ay * ay) * Math.sqrt(bx * bx + by * by))) / 2), lc = Math.sqrt(oc[0] * oc[0] + oc[1] * oc[1]);
+        var oc = x3 == null ? [ x2, y2 ] : x1 == null ? [ x0, y0 ] : d3_geom_polygonIntersect([ x0, y0 ], [ x3, y3 ], [ x1, y1 ], [ x2, y2 ]), ax = x0 - oc[0], ay = y0 - oc[1], bx = x1 - oc[0], by = y1 - oc[1], kc = 1 / Math.sin(Math.acos((ax * bx + ay * by) / (Math.sqrt(ax * ax + ay * ay) * Math.sqrt(bx * bx + by * by))) / 2), lc = Math.sqrt(oc[0] * oc[0] + oc[1] * oc[1]), mlrc0 = (r0 - lc) / (kc - 1), mlrc1 = (r1 - lc) / (kc + 1);
         if (x1 != null) {
-          var crtl = Math.min(cornerRadii[0], (r1 - lc) / (kc + 1)), crtr = Math.min(cornerRadii[1], (r1 - lc) / (kc + 1)), t30 = d3_svg_arcCornerTangents(x3 == null ? [ x2, y2 ] : [ x3, y3 ], [ x0, y0 ], r1, crtl, cw), t12 = d3_svg_arcCornerTangents([ x1, y1 ], [ x2, y2 ], r1, crtr, cw);
-          path.push("M", t30[0], "A", crtl, ",", crtl, " 0 0,", cr, " ", t30[1], "A", r1, ",", r1, " 0 ", 1 - cw ^ d3_svg_arcSweep(t30[1][0], t30[1][1], t12[1][0], t12[1][1]), ",", cw, " ", t12[1], "A", crtr, ",", crtr, " 0 0,", cr, " ", t12[0]);
+          rc10 = Math.min(rc[0], mlrc1);
+          rc11 = Math.min(rc[1], mlrc1);
+          var t30 = d3_svg_arcCornerTangents(x3 == null ? [ x2, y2 ] : [ x3, y3 ], [ x0, y0 ], r1, rc10, cw), t12 = d3_svg_arcCornerTangents([ x1, y1 ], [ x2, y2 ], r1, rc11, cw);
+          if (rc10 === rc11 && rc10 === mlrc1) {
+            path.push("M", x0, ",", y0);
+          } else {
+            path.push("M", t30[0], "A", rc10, ",", rc10, " 0 0,", cr, " ", t30[1], "A", r1, ",", r1, " 0 ", 1 - cw ^ d3_svg_arcSweep(t30[1][0], t30[1][1], t12[1][0], t12[1][1]), ",", cw, " ", t12[1], "A", rc11, ",", rc11, " 0 0,", cr, " ", t12[0]);
+          }
         } else {
           path.push("M", x0, ",", y0);
         }
         if (x3 != null) {
-          var crbl = Math.min(cornerRadii[2], (r0 - lc) / (kc - 1)), crbr = Math.min(cornerRadii[3], (r0 - lc) / (kc - 1)), t03 = d3_svg_arcCornerTangents([ x0, y0 ], [ x3, y3 ], r0, -crbl, cw), t21 = d3_svg_arcCornerTangents([ x2, y2 ], x1 == null ? [ x0, y0 ] : [ x1, y1 ], r0, -crbr, cw);
-          path.push("L", t21[0], "A", crbr, ",", crbr, " 0 0,", cr, " ", t21[1], "A", r0, ",", r0, " 0 ", cw ^ d3_svg_arcSweep(t21[1][0], t21[1][1], t03[1][0], t03[1][1]), ",", 1 - cw, " ", t03[1], "A", crbl, ",", crbl, " 0 0,", cr, " ", t03[0]);
+          rc00 = Math.min(rc[2], mlrc0);
+          rc01 = Math.min(rc[3], mlrc0);
+          var t03 = d3_svg_arcCornerTangents([ x0, y0 ], [ x3, y3 ], r0, -rc00, cw), t21 = d3_svg_arcCornerTangents([ x2, y2 ], x1 == null ? [ x0, y0 ] : [ x1, y1 ], r0, -rc01, cw);
+          if (rc00 === rc01 && rc00 === mlrc0) {
+            path.push("L", x2, ",", y2);
+          } else {
+            path.push("L", t21[0], "A", rc01, ",", rc01, " 0 0,", cr, " ", t21[1], "A", r0, ",", r0, " 0 ", cw ^ d3_svg_arcSweep(t21[1][0], t21[1][1], t03[1][0], t03[1][1]), ",", 1 - cw, " ", t03[1], "A", rc00, ",", rc00, " 0 0,", cr, " ", t03[0]);
+          }
         } else {
           path.push("L", x2, ",", y2);
         }
